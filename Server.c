@@ -16,17 +16,11 @@ struct client_data
   int socket;
   
 };
-struct Node
-{
-  struct client_data data;
-  struct Node* next;
-};
-
 char censored_words[10][10000];
 int censored_word_count = 0;
-char server_pass[100] = "VIIT1234$";
-struct Node* head = NULL;
-struct Node* tail = NULL;
+const char server_pass[100] = "VIIT1234$";
+Node* head = NULL;
+Node* tail = NULL;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // here we have pointers to the data structures which are created (buttons, window, label, in the GUI) in the mmemory
@@ -59,35 +53,6 @@ GtkWidget *chatview;
 GtkTextBuffer *chatbuffer;
 
 //method removes a node from the Linked List Data Structure to store user data
-struct Node* deletenode(struct Node* H,int sock,char* display_message)
-{ 
-   if(H == NULL)
-   { 
-     return H;
-   }
-   if(H->data.socket == sock)
-   {  
-      
-      strcpy(display_message, H->data.name);
-      strcat(display_message,"      l e f t   t h e  c h a t : ( \n \n");
-      gtk_text_buffer_insert_at_cursor(monitorbuffer,display_message, strlen(display_message));
-      
-      //actual deletion
-      struct Node* deletenode = H;
-      H = H->next;
-      free(deletenode);
-      return H;
-      
-   }
-   else
-   {
-      H->next = deletenode(H->next,sock,display_message);
-      if(H->next == NULL) tail = H;
-      return H;
-   }
-   
-}
-
 int main(int argc, char **argv)
 {  
     gtk_init(&argc, &argv); 
@@ -212,7 +177,7 @@ char* censor(char *message)
 void send_msg_all_clients(char * client_message)
 {
   pthread_mutex_lock(&mutex);
-  for(struct Node* temp = head; temp!=NULL; temp = temp->next)
+  for(Node* temp = head; temp!=NULL; temp = temp->next)
   {
       if(send(temp->data.socket,client_message,strlen(client_message),0) < 0)
         {
@@ -256,7 +221,7 @@ int isunique(char *name)
 {   
      
    pthread_mutex_lock(&mutex);  
-   for(struct Node* temp = head; temp!=NULL; temp = temp->next)
+   for(Node* temp = head; temp!=NULL; temp = temp->next)
    {  
       
       if(strcmp(temp->data.name,name) == 0)
@@ -348,27 +313,7 @@ void* start_server(void* arg)
       
        //*****adding client details in the linked list ***** \\
        pthread_mutex_lock(&mutex);
-       
-       if(head == NULL)
-       {
-       struct  Node* newnode = (struct Node*)malloc(sizeof(struct Node));
-        strcpy(newnode->data.name,client_name);
-        newnode->data.socket = client_socket;
-        head = newnode;
-        tail = newnode;
-        newnode->next = NULL;
-       }
-       else
-       {
-         struct Node* newnode = (struct Node*)malloc(sizeof(struct Node));
-         strcpy(newnode->data.name,client_name);
-         newnode->data.socket = client_socket;
-         tail->next = newnode;
-         tail = newnode;
-         tail->next = NULL;
-       }  
-       
-       pthread_mutex_unlock(&mutex);
+      pthread_mutex_unlock(&mutex);
        
        
        //GUI modifications when a new user joins
